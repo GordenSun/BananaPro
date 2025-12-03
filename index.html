@@ -473,12 +473,9 @@
       
       const used = (usageData.total_usage || 0) / 100;
 
-      // 3. 计算剩余
       const remaining = total - used;
-      // 剩余次数 = 剩余金额 / 0.15，向下取整
       const count = Math.floor(remaining / 0.15);
 
-      // 4. 只显示剩余次数
       ui.quotaInfo.innerHTML = `
         <div style="text-align:center;">
            剩余可用次数约：<span style="color:var(--accent); font-size:18px; font-weight:bold;">${count > 0 ? count : 0}</span> 次
