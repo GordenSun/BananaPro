@@ -348,9 +348,7 @@
       <div class="key-input-row">
         <input type="text" id="userKey" placeholder="sk-..." style="height:34px;">
         <button class="btn-sm" id="saveKey">保存</button>
-        <button class="btn-sm" id="checkQuota" style="margin-left:8px;">查询剩余</button>
       </div>
-      <div id="quotaInfo" style="font-size:12px; color:var(--text-muted); margin-top:10px; line-height:1.6; display:none; border-top:1px solid var(--glass-border); padding-top:8px;"></div>
     </div>
 
     <div class="status-bar" id="status"></div>
@@ -405,8 +403,6 @@
     size: el('sizeSelect'),
     key: el('userKey'),
     saveKey: el('saveKey'),
-    checkQuota: el('checkQuota'), // 新增
-    quotaInfo: el('quotaInfo'),   // 新增
     drop: el('drop'),
     fileInput: el('file'),
     thumbs: el('thumbs'),
@@ -440,52 +436,6 @@
   ui.saveKey.onclick = () => {
     localStorage.setItem(STORE_KEY, ui.key.value.trim());
     msg('Key 已保存');
-  };
-
-  // ====== 新增：查询余额功能 (只显示次数) ======
-  ui.checkQuota.onclick = async () => {
-    const key = ui.key.value.trim();
-    if (!key) return msg('请先填写 Key', true);
-
-    ui.quotaInfo.style.display = 'block';
-    ui.quotaInfo.innerHTML = '正在查询...';
-
-    try {
-      const headers = { 'Authorization': 'Bearer ' + key };
-      const baseUrl = 'https://one-api.bltcy.top';
-
-      // 1. 获取订阅总量 (Subscription)
-      const subRes = await fetch(`${baseUrl}/v1/dashboard/billing/subscription`, { headers });
-      if (!subRes.ok) throw new Error('无法获取订阅信息');
-      const subData = await subRes.json();
-      const total = subData.hard_limit_usd || 0; // 总额度
-
-      // 2. 获取已用额度 (Usage)
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const todayStr = `${year}-${month}-${day}`;
-      
-      const usageRes = await fetch(`${baseUrl}/v1/dashboard/billing/usage?start_date=2023-01-01&end_date=${todayStr}`, { headers });
-      if (!usageRes.ok) throw new Error('无法获取使用记录');
-      const usageData = await usageRes.json();
-      
-      const used = (usageData.total_usage || 0) / 100;
-
-      const remaining = total - used;
-      const count = Math.floor(remaining / 0.15);
-
-      ui.quotaInfo.innerHTML = `
-        <div style="text-align:center;">
-           剩余可用次数约：<span style="color:var(--accent); font-size:18px; font-weight:bold;">${count > 0 ? count : 0}</span> 次
-        </div>
-      `;
-
-    } catch (e) {
-      console.error(e);
-      ui.quotaInfo.innerHTML = `<span style="color:#ff6b6b">查询失败: ${e.message || '请检查Key是否有效'}</span>`;
-    }
   };
 
   ui.ratio.onchange = () => localStorage.setItem(STORE_RATIO, ui.ratio.value);
