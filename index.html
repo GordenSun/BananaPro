@@ -348,7 +348,9 @@
       <div class="key-input-row">
         <input type="text" id="userKey" placeholder="sk-..." style="height:34px;">
         <button class="btn-sm" id="saveKey">保存</button>
+        <button class="btn-sm" id="checkQuota" style="margin-left:8px;">查询剩余</button>
       </div>
+      <div id="quotaInfo" style="font-size:12px; color:var(--text-muted); margin-top:10px; line-height:1.6; display:none; border-top:1px solid var(--glass-border); padding-top:8px;"></div>
     </div>
 
     <div class="status-bar" id="status"></div>
@@ -389,6 +391,8 @@
   const ENDPOINT = 'https://hk-api.gptbest.vip/v1/images/generations';
   // 修改：默认模型名称改为示例中的 nano-banana
   const MODEL = 'nano-banana-2';
+  // 服务端代理的额度查询接口
+  const QUOTA_ENDPOINT = 'https://api.gordensun.com/api/quota';
   
   // 独立缓存 Keys (nb_art)
   const STORE_KEY = 'nb_art_v2:key';
@@ -403,6 +407,8 @@
     size: el('sizeSelect'),
     key: el('userKey'),
     saveKey: el('saveKey'),
+    checkQuota: el('checkQuota'), // 新增
+    quotaInfo: el('quotaInfo'),   // 新增
     drop: el('drop'),
     fileInput: el('file'),
     thumbs: el('thumbs'),
@@ -436,6 +442,41 @@
   ui.saveKey.onclick = () => {
     localStorage.setItem(STORE_KEY, ui.key.value.trim());
     msg('Key 已保存');
+  };
+
+  // ====== 新增：查询余额功能 (只显示次数) ======
+  ui.checkQuota.onclick = async () => {
+    const key = ui.key.value.trim();
+    if (!key) return msg('请先填写 Key', true);
+
+    ui.quotaInfo.style.display = 'block';
+    ui.quotaInfo.innerHTML = '正在查询...';
+
+    try {
+      const res = await fetch(QUOTA_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        const errMsg = data.detail || data.message || (data.error && data.error.message) || data.error || '查询失败，请检查 Key 是否有效';
+        throw new Error(errMsg);
+      }
+
+      const count = typeof data.count === 'number' ? data.count : 0;
+
+      ui.quotaInfo.innerHTML = `
+        <div style="text-align:center;">
+           剩余可用次数约：<span style="color:var(--accent); font-size:18px; font-weight:bold;">${count > 0 ? count : 0}</span> 次
+        </div>
+      `;
+
+    } catch (e) {
+      console.error(e);
+      ui.quotaInfo.innerHTML = `<span style="color:#ff6b6b">查询失败: ${e.message || '请检查Key是否有效'}</span>`;
+    }
   };
 
   ui.ratio.onchange = () => localStorage.setItem(STORE_RATIO, ui.ratio.value);
