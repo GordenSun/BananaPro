@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-  <title>Nano Banana Pro · Art Edition</title>
+  <title>Nano Banana Pro · Art Edition1750</title>
   <style>
     :root {
       /* 修改：背景色稍微调亮，更柔和 */
@@ -917,7 +917,7 @@
         <div class="grid-imgs">
           ${urls.map((url, i) => `
             <div class="img-card" onclick="openLightbox('${url}')">
-              <img src="${url}" loading="lazy" crossorigin="anonymous" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PGxpbmUgeDE9IjEyIiB5MT0iOCIgeDI9IjEyIiB5Mj0iMTIiLz48bGluZSB4MT0iMTIiIHkxPSIxNiIgeDI9IjEyLjAxIiB5Mj0iMTYiLz48L3N2Zz4=';this.className+=' error'">
+              <img src="${url}" crossorigin="anonymous" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PGxpbmUgeDE9IjEyIiB5MT0iOCIgeDI9IjEyIiB5Mj0iMTIiLz48bGluZSB4MT0iMTIiIHkxPSIxNiIgeDI9IjEyLjAxIiB5Mj0iMTYiLz48L3N2Zz4=';this.className+=' error'">
               <div class="overlay-actions">
                 <button class="btn-icon" onclick="event.stopPropagation(); download('${url}')">↓</button>
               </div>
@@ -929,19 +929,37 @@
         ui.gallery.insertAdjacentHTML('afterbegin', groupHtml);
 
         // 修复移动端图片不显示的问题：强制触发浏览器重绘
-        void ui.gallery.offsetHeight; // 强制同步重排
+        // 使用 requestAnimationFrame + transform 技巧强制 GPU 重绘
+        requestAnimationFrame(() => {
+          const newGroup = ui.gallery.querySelector('.result-group');
+          if (newGroup) {
+            // 强制同步重排
+            void newGroup.offsetHeight;
 
-        // 延迟后再次触发重绘，确保图片渲染
-        setTimeout(() => {
-          const firstCard = ui.gallery.querySelector('.result-group');
-          if (firstCard) {
-            void firstCard.offsetHeight;
-            // 在移动端滚动到新生成的结果
-            if (window.innerWidth <= 900) {
-              firstCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
+            // 通过 CSS transform 强制 GPU 重绘
+            newGroup.style.transform = 'translateZ(0)';
+
+            // 对所有新图片强制重绘
+            const imgs = newGroup.querySelectorAll('img');
+            imgs.forEach(img => {
+              img.style.transform = 'translateZ(0)';
+              void img.offsetHeight;
+            });
+
+            requestAnimationFrame(() => {
+              // 移除 transform，恢复正常
+              newGroup.style.transform = '';
+              imgs.forEach(img => {
+                img.style.transform = '';
+              });
+
+              // 在移动端滚动到新生成的结果
+              if (window.innerWidth <= 900) {
+                newGroup.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            });
           }
-        }, 100);
+        });
       }
 
       // ====== Lightbox 逻辑优化 (支持跨批次切换与键盘) ======
