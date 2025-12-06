@@ -189,13 +189,19 @@
       flex-direction: column;
       gap: 20px;
     }
-    
-    /* --- 新增修复代码 START --- */
-    /* 修复手机端图片生成后不显示的问题：取消内部滚动，让高度自然撑开 */
+
+    /* 修复手机端渲染问题 v2 */
     @media (max-width: 900px) {
-      .panel-gallery { overflow-y: visible; height: auto; display: block; }
+      .panel-gallery { 
+        overflow-y: visible; 
+        height: auto; 
+        display: block;
+        min-height: 100px; /* 确保有最小高度 */
+        /* 强制硬件加速，解决渲染卡顿/白屏 */
+        transform: translateZ(0); 
+        -webkit-transform: translateZ(0);
+      }
     }
-    /* --- 新增修复代码 END --- */
 
     .result-group { margin-bottom: 24px; animation: fadeIn 0.5s ease; }
     .result-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; } /* 增大 */
@@ -640,6 +646,9 @@
 
   function addGalleryGroup(urls, prompt) {
     const time = new Date().toLocaleTimeString();
+    
+    // 修改：移除 loading="lazy"，使用 eager 立即加载
+    // 增加：强制图片加载，避免手机端视口判断错误导致不显示
     const groupHtml = `
       <div class="result-group">
         <div class="result-meta">
@@ -650,7 +659,7 @@
         <div class="grid-imgs">
           ${urls.map((url, i) => `
             <div class="img-card" onclick="openLightbox('${url}')">
-              <img src="${url}" loading="lazy" crossorigin="anonymous" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PGxpbmUgeDE9IjEyIiB5MT0iOCIgeDI9IjEyIiB5Mj0iMTIiLz48bGluZSB4MT0iMTIiIHkxPSIxNiIgeDI9IjEyLjAxIiB5Mj0iMTYiLz48L3N2Zz4=';this.className+=' error'">
+              <img src="${url}" loading="eager" crossorigin="anonymous" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PGxpbmUgeDE9IjEyIiB5MT0iOCIgeDI9IjEyIiB5Mj0iMTIiLz48bGluZSB4MT0iMTIiIHkxPSIxNiIgeDI9IjEyLjAxIiB5Mj0iMTYiLz48L3N2Zz4=';this.className+=' error'">
               <div class="overlay-actions">
                 <button class="btn-icon" onclick="event.stopPropagation(); download('${url}')">↓</button>
               </div>
@@ -660,13 +669,21 @@
       </div>
     `;
     ui.gallery.insertAdjacentHTML('afterbegin', groupHtml);
+    
+    // 强制重绘
+    void ui.gallery.offsetHeight; 
+    
+    // 新增：自动滚动一点点，强制手机浏览器更新视口
+    // 对于 body 滚动的页面：
+    if (window.innerWidth <= 900) {
+       setTimeout(() => {
+          // 向下滚动 1px 再滚回来，或者直接滚动到顶部（因为是 afterbegin 插入）
+          window.scrollBy(0, 1);
+          window.scrollBy(0, -1);
+       }, 100);
+    }
   }
-  // --- 新增修复代码 START ---
-  // 强制浏览器重排，解决手机端异步渲染卡顿/白屏问题
-  void ui.gallery.offsetHeight; 
-  // --- 新增修复代码 END ---
 
-  
   // ====== Lightbox 逻辑优化 (支持跨批次切换与键盘) ======
   
   // 获取当前页面所有图片元素（DOM顺序）
