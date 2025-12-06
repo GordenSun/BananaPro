@@ -189,6 +189,13 @@
       flex-direction: column;
       gap: 20px;
     }
+    
+    /* --- 新增修复代码 START --- */
+    /* 修复手机端图片生成后不显示的问题：取消内部滚动，让高度自然撑开 */
+    @media (max-width: 900px) {
+      .panel-gallery { overflow-y: visible; height: auto; display: block; }
+    }
+    /* --- 新增修复代码 END --- */
 
     .result-group { margin-bottom: 24px; animation: fadeIn 0.5s ease; }
     .result-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; } /* 增大 */
@@ -654,7 +661,12 @@
     `;
     ui.gallery.insertAdjacentHTML('afterbegin', groupHtml);
   }
+  // --- 新增修复代码 START ---
+  // 强制浏览器重排，解决手机端异步渲染卡顿/白屏问题
+  void ui.gallery.offsetHeight; 
+  // --- 新增修复代码 END ---
 
+  
   // ====== Lightbox 逻辑优化 (支持跨批次切换与键盘) ======
   
   // 获取当前页面所有图片元素（DOM顺序）
