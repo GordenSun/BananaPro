@@ -569,7 +569,7 @@
       <header>
         <h1>NANO BANANA PRO</h1>
         <div class="author-info">
-          <span>Art Edition1755</span>
+          <span>Art Edition</span>
           <span>作者: Gorden Sun <span class="author-highlight" onclick="copyWx()">微信: duge360</span></span>
         </div>
       </header>
@@ -907,68 +907,99 @@
 
       function addGalleryGroup(urls, prompt) {
         const time = new Date().toLocaleTimeString();
-        const groupHtml = `
-      <div class="result-group">
-        <div class="result-meta">
+
+        // 创建容器
+        const group = document.createElement('div');
+        group.className = 'result-group';
+
+        // 创建 meta 信息
+        const meta = document.createElement('div');
+        meta.className = 'result-meta';
+        meta.innerHTML = `
           <span>${time}</span>
           <span style="opacity:0.6; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${prompt}</span>
           <button class="btn-copy" data-text="${prompt.replace(/"/g, '&quot;')}" onclick="copyFromData(this)">复制</button>
-        </div>
-        <div class="grid-imgs">
-          ${urls.map((url, i) => `
-            <div class="img-card" onclick="openLightbox('${url}')">
-              <img src="${url}" crossorigin="anonymous" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PGxpbmUgeDE9IjEyIiB5MT0iOCIgeDI9IjEyIiB5Mj0iMTIiLz48bGluZSB4MT0iMTIiIHkxPSIxNiIgeDI9IjEyLjAxIiB5Mj0iMTYiLz48L3N2Zz4=';this.className+=' error'">
-              <div class="overlay-actions">
-                <button class="btn-icon" onclick="event.stopPropagation(); download('${url}')">↓</button>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
-        ui.gallery.insertAdjacentHTML('afterbegin', groupHtml);
+        `;
+        group.appendChild(meta);
 
-        // 修复移动端(尤其iOS Safari)图片不显示的问题
-        const newGroup = ui.gallery.querySelector('.result-group');
-        if (newGroup) {
-          const imgs = newGroup.querySelectorAll('img');
+        // 创建图片网格
+        const grid = document.createElement('div');
+        grid.className = 'grid-imgs';
 
-          // 方法1: 强制触发 iOS Safari 重绘 - 通过微小滚动
-          const forceRepaint = () => {
-            // 保存当前滚动位置
-            const scrollY = window.scrollY || window.pageYOffset;
-            // 微小滚动触发重绘
-            window.scrollTo(0, scrollY + 1);
+        urls.forEach(url => {
+          const card = document.createElement('div');
+          card.className = 'img-card';
+          card.onclick = () => openLightbox(url);
+
+          const img = document.createElement('img');
+          img.crossOrigin = 'anonymous';
+
+          // 关键修复：图片加载完成后强制触发重绘
+          img.onload = function () {
+            // 方法1: visibility 切换（对 WebView 最有效）
+            this.style.visibility = 'hidden';
+            void this.offsetHeight;
+            this.style.visibility = 'visible';
+
+            // 方法2: 触发父容器重绘
+            card.style.opacity = '0.99';
             setTimeout(() => {
-              window.scrollTo(0, scrollY);
+              card.style.opacity = '1';
             }, 0);
           };
 
-          // 方法2: 监听每个图片加载完成后触发重绘
+          img.onerror = function () {
+            this.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PGxpbmUgeDE9IjEyIiB5MT0iOCIgeDI9IjEyIiB5Mj0iMTIiLz48bGluZSB4MT0iMTIiIHkxPSIxNiIgeDI9IjEyLjAxIiB5Mj0iMTYiLz48L3N2Zz4=';
+            this.className = 'error';
+          };
+
+          // 设置 src（放在事件绑定后）
+          img.src = url;
+
+          const overlay = document.createElement('div');
+          overlay.className = 'overlay-actions';
+          const dlBtn = document.createElement('button');
+          dlBtn.className = 'btn-icon';
+          dlBtn.innerHTML = '↓';
+          dlBtn.onclick = (e) => { e.stopPropagation(); download(url); };
+          overlay.appendChild(dlBtn);
+
+          card.appendChild(img);
+          card.appendChild(overlay);
+          grid.appendChild(card);
+        });
+
+        group.appendChild(grid);
+
+        // 先设置 visibility hidden，插入后再显示，强制重绘
+        group.style.visibility = 'hidden';
+        ui.gallery.insertBefore(group, ui.gallery.firstChild);
+
+        // 强制重排后显示
+        void group.offsetHeight;
+        group.style.visibility = 'visible';
+
+        // 延迟再次强制重绘
+        setTimeout(() => {
+          group.style.display = 'none';
+          void group.offsetHeight;
+          group.style.display = '';
+
+          // 滚动到结果
+          if (window.innerWidth <= 900) {
+            group.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+
+        // 500ms 后最终保底重绘
+        setTimeout(() => {
+          const imgs = group.querySelectorAll('img');
           imgs.forEach(img => {
-            if (img.complete) {
-              // 图片已缓存，立即触发重绘
-              forceRepaint();
-            } else {
-              img.onload = () => {
-                forceRepaint();
-              };
-            }
+            img.style.visibility = 'hidden';
+            void img.offsetHeight;
+            img.style.visibility = 'visible';
           });
-
-          // 方法3: 延迟后强制重绘作为保底
-          setTimeout(() => {
-            // 切换 display 强制重绘
-            newGroup.style.display = 'none';
-            void newGroup.offsetHeight;
-            newGroup.style.display = '';
-
-            // 在移动端滚动到新生成的结果
-            if (window.innerWidth <= 900) {
-              newGroup.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-          }, 300);
-        }
+        }, 500);
       }
 
       // ====== Lightbox 逻辑优化 (支持跨批次切换与键盘) ======
