@@ -643,7 +643,8 @@
         <div class="grid-imgs">
           ${urls.map((url, i) => `
             <div class="img-card" onclick="openLightbox('${url}')">
-              <img src="${url}" loading="lazy" crossorigin="anonymous" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PGxpbmUgeDE9IjEyIiB5MT0iOCIgeDI9IjEyIiB5Mj0iMTIiLz48bGluZSB4MT0iMTIiIHkxPSIxNiIgeDI9IjEyLjAxIiB5Mj0iMTYiLz48L3N2Zz4=';this.className+=' error'">
+              <!-- 修改：移除 loading="lazy" 改为 eager，解决手机端生成后不显示的问题 -->
+              <img src="${url}" loading="eager" crossorigin="anonymous" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PGxpbmUgeDE9IjEyIiB5MT0iOCIgeDI9IjEyIiB5Mj0iMTIiLz48bGluZSB4MT0iMTIiIHkxPSIxNiIgeDI9IjEyLjAxIiB5Mj0iMTYiLz48L3N2Zz4=';this.className+=' error'">
               <div class="overlay-actions">
                 <button class="btn-icon" onclick="event.stopPropagation(); download('${url}')">↓</button>
               </div>
@@ -654,17 +655,21 @@
     `;
     ui.gallery.insertAdjacentHTML('afterbegin', groupHtml);
 
-    // ====== 修复部分开始：强制手机端渲染刷新 ======
+    // ====== 修复部分：强制刷新与滚动 ======
     setTimeout(() => {
       const newEl = ui.gallery.firstElementChild;
       if (newEl) {
-        // 读取 offsetHeight 强制浏览器触发重排 (Reflow)
+        // 读取 offsetHeight 强制重排
         void newEl.offsetHeight; 
-        // 平滑滚动到新元素，确保它在可视区域内
+        
+        // 针对图片元素再次强制检查，确保图片层级正确
+        const imgs = newEl.querySelectorAll('img');
+        imgs.forEach(img => void img.offsetHeight);
+
+        // 平滑滚动
         newEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
-    }, 100);
-    // ====== 修复部分结束 ======
+    }, 150); // 稍微延长时间
   }
 
   // ====== Lightbox 逻辑优化 (支持跨批次切换与键盘) ======
