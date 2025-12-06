@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-  <title>Nano Banana Pro · Art Edition1750</title>
+  <title>Nano Banana Pro · Art Edition</title>
   <style>
     :root {
       /* 修改：背景色稍微调亮，更柔和 */
@@ -569,7 +569,7 @@
       <header>
         <h1>NANO BANANA PRO</h1>
         <div class="author-info">
-          <span>Art Edition</span>
+          <span>Art Edition1755</span>
           <span>作者: Gorden Sun <span class="author-highlight" onclick="copyWx()">微信: duge360</span></span>
         </div>
       </header>
@@ -928,38 +928,47 @@
     `;
         ui.gallery.insertAdjacentHTML('afterbegin', groupHtml);
 
-        // 修复移动端图片不显示的问题：强制触发浏览器重绘
-        // 使用 requestAnimationFrame + transform 技巧强制 GPU 重绘
-        requestAnimationFrame(() => {
-          const newGroup = ui.gallery.querySelector('.result-group');
-          if (newGroup) {
-            // 强制同步重排
+        // 修复移动端(尤其iOS Safari)图片不显示的问题
+        const newGroup = ui.gallery.querySelector('.result-group');
+        if (newGroup) {
+          const imgs = newGroup.querySelectorAll('img');
+
+          // 方法1: 强制触发 iOS Safari 重绘 - 通过微小滚动
+          const forceRepaint = () => {
+            // 保存当前滚动位置
+            const scrollY = window.scrollY || window.pageYOffset;
+            // 微小滚动触发重绘
+            window.scrollTo(0, scrollY + 1);
+            setTimeout(() => {
+              window.scrollTo(0, scrollY);
+            }, 0);
+          };
+
+          // 方法2: 监听每个图片加载完成后触发重绘
+          imgs.forEach(img => {
+            if (img.complete) {
+              // 图片已缓存，立即触发重绘
+              forceRepaint();
+            } else {
+              img.onload = () => {
+                forceRepaint();
+              };
+            }
+          });
+
+          // 方法3: 延迟后强制重绘作为保底
+          setTimeout(() => {
+            // 切换 display 强制重绘
+            newGroup.style.display = 'none';
             void newGroup.offsetHeight;
+            newGroup.style.display = '';
 
-            // 通过 CSS transform 强制 GPU 重绘
-            newGroup.style.transform = 'translateZ(0)';
-
-            // 对所有新图片强制重绘
-            const imgs = newGroup.querySelectorAll('img');
-            imgs.forEach(img => {
-              img.style.transform = 'translateZ(0)';
-              void img.offsetHeight;
-            });
-
-            requestAnimationFrame(() => {
-              // 移除 transform，恢复正常
-              newGroup.style.transform = '';
-              imgs.forEach(img => {
-                img.style.transform = '';
-              });
-
-              // 在移动端滚动到新生成的结果
-              if (window.innerWidth <= 900) {
-                newGroup.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }
-            });
-          }
-        });
+            // 在移动端滚动到新生成的结果
+            if (window.innerWidth <= 900) {
+              newGroup.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, 300);
+        }
       }
 
       // ====== Lightbox 逻辑优化 (支持跨批次切换与键盘) ======
