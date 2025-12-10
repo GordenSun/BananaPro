@@ -909,7 +909,7 @@
       const STORE_RATIO = 'nb_art:ratio';
       const STORE_SIZE = 'nb_art:size';
       const HISTORY_KEY = 'nb_art_v2:history'; // 历史记录存储 key
-      const POLL_INTERVAL = 5000; // 轮询间隔 3 秒
+      const POLL_INTERVAL = 3000; // 轮询间隔 3 秒
       const MAX_POLL_ATTEMPTS = 120; // 最大轮询次数 (6分钟)
 
       // 历史分页状态
@@ -1081,12 +1081,18 @@
       function addHistoryItem(taskId, status = 'pending', imageUrls = [], prompt = '') {
         const history = loadHistory();
         const existingIndex = history.findIndex(h => h.taskId === taskId);
+        const existing = existingIndex >= 0 ? history[existingIndex] : null;
+
+        // 保留已有数据：如果新传入的是空值，则使用旧值
+        const finalImageUrls = imageUrls.length > 0 ? imageUrls : (existing?.imageUrls || []);
+        const finalPrompt = prompt || (existing?.prompt || '');
+
         const item = {
           taskId,
           status,
-          imageUrls,
-          prompt,
-          createdAt: existingIndex >= 0 ? history[existingIndex].createdAt : new Date().toISOString(),
+          imageUrls: finalImageUrls,
+          prompt: finalPrompt,
+          createdAt: existing ? existing.createdAt : new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
         if (existingIndex >= 0) {
