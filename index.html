@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="zh-CN">
 
@@ -560,6 +561,209 @@
       animation: spin 0.8s linear infinite;
       display: none;
     }
+
+    /* History Button */
+    .btn-history {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-bottom: 10px;
+    }
+
+    .btn-history:hover {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+
+    /* History Modal */
+    .history-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0, 0, 0, 0.9);
+      display: none;
+      flex-direction: column;
+      backdrop-filter: blur(10px);
+    }
+
+    .history-modal.show {
+      display: flex;
+    }
+
+    .history-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--glass-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .history-header h3 {
+      margin: 0;
+      font-size: 18px;
+      color: #fff;
+    }
+
+    .history-close {
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 8px 12px;
+    }
+
+    .history-close:hover {
+      color: #fff;
+    }
+
+    .history-body {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .history-item {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .history-item-thumb {
+      width: 120px;
+      height: 68px;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #000;
+      flex-shrink: 0;
+    }
+
+    .history-item-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .history-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .history-item-time {
+      font-size: 12px;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .history-item-taskid {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: monospace;
+      word-break: break-all;
+    }
+
+    .history-item-status {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-top: 4px;
+      display: inline-block;
+    }
+
+    .history-item-status.completed {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+    }
+
+    .history-item-status.pending {
+      background: rgba(234, 179, 8, 0.2);
+      color: #eab308;
+    }
+
+    .history-item-status.failed {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+
+    .history-item-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .history-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--glass-border);
+      color: #ccc;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .history-btn:hover {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+
+    .history-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--glass-border);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .pagination-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--glass-border);
+      color: #ccc;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .pagination-info {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .history-empty {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 60px 20px;
+      font-size: 14px;
+    }
   </style>
 </head>
 
@@ -637,7 +841,24 @@
     </aside>
 
     <main class="panel-gallery" id="gallery">
+      <button class="btn-history" onclick="openHistory()">📋 历史记录</button>
     </main>
+  </div>
+
+  <!-- History Modal -->
+  <div class="history-modal" id="historyModal">
+    <div class="history-header">
+      <h3>📋 历史生成记录</h3>
+      <button class="history-close" onclick="closeHistory()">✕ 关闭</button>
+    </div>
+    <div class="history-body">
+      <div class="history-list" id="historyList"></div>
+    </div>
+    <div class="history-footer">
+      <button class="pagination-btn" id="historyPrev" onclick="historyPrevPage()">← 上一页</button>
+      <span class="pagination-info" id="historyPageInfo">第 1 页 / 共 1 页</span>
+      <button class="pagination-btn" id="historyNext" onclick="historyNextPage()">下一页 →</button>
+    </div>
   </div>
 
   <div class="lightbox" id="lightbox">
@@ -664,6 +885,7 @@
 
       // 修改：新接口地址
       const ENDPOINT = 'https://hk-api.gptbest.vip/v1/images/generations';
+      const TASK_ENDPOINT = 'https://hk-api.gptbest.vip/v1/images/tasks'; // 任务查询端点
       // 修改：默认模型名称改为示例中的 nano-banana
       const MODEL = 'nano-banana-2';
       // 服务端代理的额度查询接口
@@ -673,6 +895,13 @@
       const STORE_KEY = 'nb_art_v2:key';
       const STORE_RATIO = 'nb_art:ratio';
       const STORE_SIZE = 'nb_art:size';
+      const HISTORY_KEY = 'nb_art_v2:history'; // 历史记录存储 key
+      const POLL_INTERVAL = 3000; // 轮询间隔 3 秒
+      const MAX_POLL_ATTEMPTS = 120; // 最大轮询次数 (6分钟)
+
+      // 历史分页状态
+      let historyPage = 1;
+      const historyPerPage = 10;
 
       // ====== DOM 元素 ======
       const el = (id) => document.getElementById(id);
@@ -699,7 +928,12 @@
         lbDownBtn: el('lbDownBtn'),
         lbPrev: el('lbPrev'),
         lbNext: el('lbNext'),
-        lbClose: el('lbClose')
+        lbClose: el('lbClose'),
+        historyModal: el('historyModal'),
+        historyList: el('historyList'),
+        historyPrev: el('historyPrev'),
+        historyNext: el('historyNext'),
+        historyPageInfo: el('historyPageInfo')
       };
 
       let refImages = []; // 参考图数据
@@ -811,7 +1045,230 @@
         return rawUrl;
       }
 
-      // ====== 核心：生成请求 (适配新接口) ======
+      // ====== 历史记录管理 ======
+      function loadHistory() {
+        try {
+          const data = localStorage.getItem(HISTORY_KEY);
+          return data ? JSON.parse(data) : [];
+        } catch (e) {
+          console.error('加载历史记录失败:', e);
+          return [];
+        }
+      }
+
+      function saveHistory(history) {
+        try {
+          localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        } catch (e) {
+          console.error('保存历史记录失败:', e);
+        }
+      }
+
+      function addHistoryItem(taskId, status = 'pending', imageUrls = [], prompt = '') {
+        const history = loadHistory();
+        const existingIndex = history.findIndex(h => h.taskId === taskId);
+        const item = {
+          taskId,
+          status,
+          imageUrls,
+          prompt,
+          createdAt: existingIndex >= 0 ? history[existingIndex].createdAt : new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        if (existingIndex >= 0) {
+          history[existingIndex] = item;
+        } else {
+          history.unshift(item);
+        }
+        saveHistory(history);
+        return item;
+      }
+
+      function renderHistoryList() {
+        const history = loadHistory();
+        const totalPages = Math.max(1, Math.ceil(history.length / historyPerPage));
+        historyPage = Math.min(historyPage, totalPages);
+
+        const start = (historyPage - 1) * historyPerPage;
+        const pageItems = history.slice(start, start + historyPerPage);
+
+        if (pageItems.length === 0) {
+          ui.historyList.innerHTML = '<div class="history-empty">暂无历史记录</div>';
+        } else {
+          ui.historyList.innerHTML = pageItems.map(item => {
+            const time = new Date(item.createdAt).toLocaleString();
+            const statusClass = item.status === 'completed' ? 'completed' : (item.status === 'failed' ? 'failed' : 'pending');
+            const statusText = item.status === 'completed' ? '已完成' : (item.status === 'failed' ? '失败' : '处理中...');
+            const thumbHtml = item.imageUrls && item.imageUrls.length > 0
+              ? `<img src="${item.imageUrls[0]}" loading="lazy">`
+              : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:12px;">生成中...</div>';
+
+            return `
+              <div class="history-item" data-task-id="${item.taskId}">
+                <div class="history-item-thumb">${thumbHtml}</div>
+                <div class="history-item-info">
+                  <div class="history-item-time">${time}</div>
+                  <div class="history-item-taskid">Task: ${item.taskId}</div>
+                  <div class="history-item-status ${statusClass}">${statusText}</div>
+                </div>
+                <div class="history-item-actions">
+                  ${item.status === 'pending' ? `<button class="history-btn" onclick="refreshHistoryItem('${item.taskId}')">刷新</button>` : ''}
+                  ${item.status === 'completed' && item.imageUrls && item.imageUrls.length > 0 ? `<button class="history-btn" onclick="viewHistoryImages('${item.taskId}')">查看</button>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        ui.historyPageInfo.textContent = `第 ${historyPage} 页 / 共 ${totalPages} 页`;
+        ui.historyPrev.disabled = historyPage <= 1;
+        ui.historyNext.disabled = historyPage >= totalPages;
+      }
+
+      window.openHistory = () => {
+        historyPage = 1;
+        renderHistoryList();
+        ui.historyModal.classList.add('show');
+      };
+
+      window.closeHistory = () => {
+        ui.historyModal.classList.remove('show');
+      };
+
+      window.historyPrevPage = () => {
+        if (historyPage > 1) {
+          historyPage--;
+          renderHistoryList();
+        }
+      };
+
+      window.historyNextPage = () => {
+        const history = loadHistory();
+        const totalPages = Math.ceil(history.length / historyPerPage);
+        if (historyPage < totalPages) {
+          historyPage++;
+          renderHistoryList();
+        }
+      };
+
+      window.refreshHistoryItem = async (taskId) => {
+        const key = ui.key.value.trim();
+        if (!key) return msg('请填写 Key', true);
+
+        try {
+          await pollTaskStatus(taskId, key, 1);
+          renderHistoryList();
+        } catch (e) {
+          console.error('刷新失败:', e);
+        }
+      };
+
+      window.viewHistoryImages = (taskId) => {
+        const history = loadHistory();
+        const item = history.find(h => h.taskId === taskId);
+        if (item && item.imageUrls && item.imageUrls.length > 0) {
+          closeHistory();
+          openLightbox(item.imageUrls[0]);
+        }
+      };
+
+      // ====== 异步任务轮询 ======
+      async function pollTaskStatus(taskId, key, maxAttempts = MAX_POLL_ATTEMPTS) {
+        let attempts = 0;
+
+        while (attempts < maxAttempts) {
+          attempts++;
+
+          try {
+            const res = await fetch(`${TASK_ENDPOINT}/${taskId}`, {
+              method: 'GET',
+              headers: { 'Authorization': 'Bearer ' + key }
+            });
+
+            if (!res.ok) {
+              let errStr = `Error ${res.status}`;
+              try { const j = await res.json(); if (j.error && j.error.message) errStr = j.error.message; } catch (e) { }
+              if (res.status === 404 && attempts < maxAttempts) {
+                msg(`正在生成中... (${attempts}/${maxAttempts})`);
+                await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+                continue;
+              }
+              throw new Error(errStr);
+            }
+
+            const data = await res.json();
+            console.log(`轮询第 ${attempts} 次, 完整响应:`, JSON.stringify(data, null, 2));
+
+            let urls = [];
+
+            // 方式1: data.data.data.data 四层嵌套 (实际API返回格式)
+            if (data.data && data.data.data && data.data.data.data &&
+              Array.isArray(data.data.data.data) && data.data.data.data.length > 0) {
+              urls = data.data.data.data.map(i => {
+                if (i.url) return fixR2Url(i.url);
+                if (i.b64_json && i.b64_json !== '') return 'data:image/png;base64,' + i.b64_json;
+                return null;
+              }).filter(u => u !== null);
+            }
+
+            // 方式2: data.data.data 三层嵌套
+            if (urls.length === 0 && data.data && data.data.data &&
+              Array.isArray(data.data.data) && data.data.data.length > 0) {
+              urls = data.data.data.map(i => {
+                if (i.url) return fixR2Url(i.url);
+                if (i.b64_json && i.b64_json !== '') return 'data:image/png;base64,' + i.b64_json;
+                return null;
+              }).filter(u => u !== null);
+            }
+
+            // 方式3: data.data 是数组
+            if (urls.length === 0 && data.data && Array.isArray(data.data) && data.data.length > 0) {
+              urls = data.data.map(i => {
+                if (i.url) return fixR2Url(i.url);
+                if (i.b64_json && i.b64_json !== '') return 'data:image/png;base64,' + i.b64_json;
+                return null;
+              }).filter(u => u !== null);
+            }
+
+            if (urls.length > 0) {
+              console.log('成功找到图片URL:', urls);
+              addHistoryItem(taskId, 'completed', urls);
+              return { success: true, urls };
+            }
+
+            const status = (data.status || data.data?.status || '').toUpperCase();
+
+            if (status === 'SUCCESS' || status === 'COMPLETED' || status === 'DONE') {
+              addHistoryItem(taskId, 'completed', []);
+              return { success: true, urls: [] };
+            }
+
+            if (status === 'FAILED' || status === 'ERROR') {
+              addHistoryItem(taskId, 'failed', []);
+              throw new Error(data.fail_reason || data.message || '任务失败');
+            }
+
+            const progress = data.progress || data.data?.progress || '';
+            msg(`正在生成中... ${progress} (${attempts}/${maxAttempts})`);
+
+          } catch (err) {
+            console.error(`轮询失败 (尝试 ${attempts}):`, err);
+            if (attempts >= maxAttempts) {
+              addHistoryItem(taskId, 'failed', []);
+              throw err;
+            }
+          }
+
+          if (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+          }
+        }
+
+        addHistoryItem(taskId, 'failed', []);
+        throw new Error('轮询超时，请稍后在历史记录中查看');
+      }
+
+      // ====== 核心：生成请求 (异步模式) ======
       ui.go.onclick = async () => {
         const prompt = ui.prompt.value.trim();
         const key = ui.key.value.trim();
@@ -820,36 +1277,31 @@
         if (!key) return msg('请填写 Key', true);
 
         setLoading(true);
-        msg('连接艺术引擎...');
+        msg('正在提交生成任务...');
 
         try {
-          // 1. 构造请求参数（适配新接口字段）
           const payload = {
             model: MODEL,
             prompt: prompt,
-            aspect_ratio: ui.ratio.value, // 修改为下划线风格
-            image_size: ui.size.value     // 修改为下划线风格
+            aspect_ratio: ui.ratio.value,
+            image_size: ui.size.value
           };
 
-          // 如果有参考图，添加到 image 字段
           if (refImages.length > 0) {
             payload.image = refImages;
           }
 
-          // 2. 发起请求
-          const res = await fetch(ENDPOINT, {
+          // 使用异步模式提交请求
+          const res = await fetch(`${ENDPOINT}?async=true`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer ' + key
-              // 移除旧接口的 oss-id 和 oss-path
             },
             body: JSON.stringify(payload)
           });
 
-          // 3. 处理响应（标准 JSON）
           if (!res.ok) {
-            // 尝试解析错误信息
             let errMessage = `HTTP ${res.status}`;
             try {
               const errData = await res.json();
@@ -863,21 +1315,39 @@
           }
 
           const data = await res.json();
+          console.log('Async API Response:', data);
 
-          // 4. 提取结果
-          // 预期格式: { data: [ { url: "..." }, ... ] }
-          let resultUrls = [];
-          if (data.data && Array.isArray(data.data)) {
-            resultUrls = data.data
+          if (data.task_id) {
+            const taskId = data.task_id;
+            msg(`任务已提交，正在等待生成结果... (Task ID: ${taskId.slice(0, 8)}...)`);
+
+            addHistoryItem(taskId, 'pending', [], prompt);
+
+            try {
+              const result = await pollTaskStatus(taskId, key);
+              if (result.success && result.urls.length > 0) {
+                msg('创作完成');
+                addGalleryGroup(result.urls, prompt);
+              } else {
+                throw new Error('未返回有效图片');
+              }
+            } catch (pollErr) {
+              msg(`${pollErr.message}`, true);
+            }
+          } else if (data.data && Array.isArray(data.data)) {
+            // 兼容同步返回
+            const resultUrls = data.data
               .filter(item => item.url)
               .map(item => fixR2Url(item.url));
-          }
 
-          if (resultUrls.length) {
-            msg('创作完成');
-            addGalleryGroup(resultUrls, prompt);
+            if (resultUrls.length) {
+              msg('创作完成');
+              addGalleryGroup(resultUrls, prompt);
+            } else {
+              throw new Error('未收到画作数据');
+            }
           } else {
-            throw new Error('未收到画作数据');
+            throw new Error('未返回有效的任务ID或图片数据');
           }
 
         } catch (err) {
@@ -1070,6 +1540,12 @@
 
       // 事件绑定: 键盘 (Esc, Left, Right)
       document.addEventListener('keydown', (e) => {
+        // ESC 关闭历史弹窗
+        if (e.key === 'Escape' && ui.historyModal.classList.contains('show')) {
+          closeHistory();
+          return;
+        }
+
         if (!ui.lb.classList.contains('show')) return;
 
         switch (e.key) {
