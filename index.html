@@ -562,23 +562,35 @@
       display: none;
     }
 
-    /* History Button */
+    /* History Button - Fixed in gallery area */
     .btn-history {
-      background: rgba(255, 255, 255, 0.1);
+      position: fixed;
+      top: 32px;
+      right: 32px;
+      background: rgba(0, 0, 0, 0.6);
       border: 1px solid var(--glass-border);
       color: var(--text-muted);
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
       cursor: pointer;
       transition: 0.2s;
-      margin-bottom: 10px;
+      z-index: 50;
+      backdrop-filter: blur(4px);
     }
 
     .btn-history:hover {
       background: var(--accent);
       color: #000;
       border-color: var(--accent);
+    }
+
+    @media (max-width: 900px) {
+      .btn-history {
+        top: auto;
+        bottom: 20px;
+        right: 20px;
+      }
     }
 
     /* History Modal */
@@ -841,9 +853,11 @@
     </aside>
 
     <main class="panel-gallery" id="gallery">
-      <button class="btn-history" onclick="openHistory()">📋 历史记录</button>
     </main>
   </div>
+
+  <!-- Fixed History Button -->
+  <button class="btn-history" onclick="openHistory()">📋 历史</button>
 
   <!-- History Modal -->
   <div class="history-modal" id="historyModal">
@@ -939,6 +953,7 @@
       let refImages = []; // 参考图数据
       let currentLbUrl = ''; // 当前大图URL
       let currentImgIndex = -1; // 当前大图在所有图片中的索引
+      let viewingFromHistory = false; // 标记是否从历史记录查看大图
 
       // ====== 初始化：加载缓存 ======
       ui.key.value = localStorage.getItem(STORE_KEY) || '';
@@ -1167,8 +1182,15 @@
         const history = loadHistory();
         const item = history.find(h => h.taskId === taskId);
         if (item && item.imageUrls && item.imageUrls.length > 0) {
-          closeHistory();
-          openLightbox(item.imageUrls[0]);
+          // 设置标记，表示从历史记录打开
+          viewingFromHistory = true;
+          // 先隐藏历史弹窗（不关闭，这样关闭大图时可以返回）
+          ui.historyModal.style.visibility = 'hidden';
+          // 直接设置大图URL
+          currentLbUrl = item.imageUrls[0];
+          ui.lbImg.src = currentLbUrl;
+          ui.lb.classList.add('show');
+          ui.lbInfo.textContent = 'History Preview';
         }
       };
 
@@ -1482,6 +1504,7 @@
 
       // 打开大图
       window.openLightbox = (url) => {
+        viewingFromHistory = false;  // 从图库查看时重置标记
         const imgs = getAllImages();
         // 查找当前图片索引（根据src匹配）
         currentImgIndex = imgs.findIndex(img => img.src === url);
@@ -1520,6 +1543,11 @@
       // 关闭逻辑
       function closeLightbox() {
         ui.lb.classList.remove('show');
+        // 如果是从历史记录打开的，关闭大图后返回历史列表
+        if (viewingFromHistory) {
+          viewingFromHistory = false;
+          ui.historyModal.style.visibility = 'visible';
+        }
       }
 
       // 事件绑定: 按钮
@@ -1540,18 +1568,19 @@
 
       // 事件绑定: 键盘 (Esc, Left, Right)
       document.addEventListener('keydown', (e) => {
-        // ESC 关闭历史弹窗
-        if (e.key === 'Escape' && ui.historyModal.classList.contains('show')) {
-          closeHistory();
+        // 先检查大图框是否显示
+        if (ui.lb.classList.contains('show')) {
+          switch (e.key) {
+            case 'Escape': closeLightbox(); break;
+            case 'ArrowLeft': if (!viewingFromHistory) prevImage(); break;
+            case 'ArrowRight': if (!viewingFromHistory) nextImage(); break;
+          }
           return;
         }
 
-        if (!ui.lb.classList.contains('show')) return;
-
-        switch (e.key) {
-          case 'Escape': closeLightbox(); break;
-          case 'ArrowLeft': prevImage(); break;
-          case 'ArrowRight': nextImage(); break;
+        // ESC 关闭历史弹窗
+        if (e.key === 'Escape' && ui.historyModal.classList.contains('show')) {
+          closeHistory();
         }
       });
 
