@@ -1207,11 +1207,9 @@
         try {
           // 使用静默模式，不更新主界面状态栏
           await pollTaskStatus(taskId, key, 1, true);
+          renderHistoryList();
         } catch (e) {
           console.error('刷新失败:', e);
-        } finally {
-          // 无论成功还是失败，都刷新历史列表以显示最新状态
-          renderHistoryList();
         }
       };
 
@@ -1297,8 +1295,7 @@
             // 1. 明确失败：只有 FAILURE 才算真正失败
             if (status === 'FAILURE') {
               addHistoryItem(taskId, 'failed', []);
-              // 使用return而不是throw，防止catch块覆盖failed状态
-              return { success: false, urls: [], failed: true, reason: data.fail_reason || data.data?.fail_reason || '任务失败' };
+              throw new Error(data.fail_reason || '任务失败');
             }
 
             // 2. 明确成功：SUCCESS/COMPLETED/DONE/FINISHED
@@ -1386,20 +1383,12 @@
 
           if (!res.ok) {
             let errMessage = `HTTP ${res.status}`;
-            // 特殊处理413错误
-            if (res.status === 413) {
-              throw new Error('413错误，上传的附件太大');
-            }
             try {
               const errData = await res.json();
               if (errData.error && errData.error.message) {
                 errMessage = errData.error.message;
               } else if (errData.message) {
                 errMessage = errData.message;
-              }
-              // 特殊处理额度不足错误
-              if (errMessage.includes('token quota is not enough')) {
-                errMessage = '剩余额度不足';
               }
             } catch (e) { }
             throw new Error(errMessage);
